@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user profile information including role (Job Seeker or Employer).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The unique ID of the user." },
+        "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "role": { "type": "string", "enum": ["job_seeker", "employer"], "description": "The user's role in the portal." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the profile was created." }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "JobPost": {
+      "title": "Job Post",
+      "description": "A job listing created by an employer.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique ID of the job post." },
+        "employerId": { "type": "string", "description": "The UID of the employer who created the post." },
+        "title": { "type": "string", "description": "The job title." },
+        "company": { "type": "string", "description": "The company name." },
+        "location": { "type": "string", "description": "The job location." },
+        "salary": { "type": "string", "description": "The salary range." },
+        "description": { "type": "string", "description": "The job description." },
+        "specUrl": { "type": "string", "description": "URL to the job specification document." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the job was posted." }
+      },
+      "required": ["employerId", "title", "company", "description"]
+    },
+    "Application": {
+      "title": "Job Application",
+      "description": "An application submitted by a job seeker for a specific job.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The unique ID of the application." },
+        "jobId": { "type": "string", "description": "The ID of the job being applied for." },
+        "jobSeekerId": { "type": "string", "description": "The UID of the job seeker applying." },
+        "employerId": { "type": "string", "description": "The UID of the employer who owns the job." },
+        "resumeUrl": { "type": "string", "description": "URL to the submitted resume." },
+        "status": { "type": "string", "enum": ["pending", "reviewed", "accepted", "rejected"], "description": "The current status of the application." },
+        "appliedAt": { "type": "string", "format": "date-time", "description": "When the application was submitted." }
+      },
+      "required": ["jobId", "jobSeekerId", "employerId", "resumeUrl"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "UserProfile",
+      "description": "Collection of user profiles."
+    },
+    "/jobs/{jobId}": {
+      "schema": "JobPost",
+      "description": "Collection of job listings."
+    },
+    "/applications/{applicationId}": {
+      "schema": "Application",
+      "description": "Collection of job applications."
+    }
+  }
+}

@@ -1,0 +1,64 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isEmployer() {
+      return isAuthenticated() && getUserData().role == 'employer';
+    }
+
+    function isJobSeeker() {
+      return isAuthenticated() && getUserData().role == 'job_seeker';
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && 
+        request.resource.data.keys().hasAll(['uid', 'email', 'role']) &&
+        request.resource.data.role in ['job_seeker', 'employer'];
+      allow update: if isOwner(userId) && 
+        request.resource.data.role == resource.data.role; // Role cannot be changed
+    }
+
+    // Jobs collection
+    match /jobs/{jobId} {
+      allow read: if isAuthenticated();
+      allow create: if isEmployer() && 
+        request.resource.data.employerId == request.auth.uid;
+      allow update, delete: if isEmployer() && 
+        resource.data.employerId == request.auth.uid;
+    }
+
+    // Applications collection
+    match /applications/{applicationId} {
+      allow read: if isAuthenticated() && (
+        request.auth.uid == resource.data.jobSeekerId || 
+        request.auth.uid == resource.data.employerId
+      );
+      allow create: if isJobSeeker() && 
+        request.resource.data.jobSeekerId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        (isJobSeeker() && request.auth.uid == resource.data.jobSeekerId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']) == false) ||
+        (isEmployer() && request.auth.uid == resource.data.employerId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']))
+      );
+    }
+  }
+}
